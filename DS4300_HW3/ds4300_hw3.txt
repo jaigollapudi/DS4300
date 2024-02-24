@@ -1,0 +1,141 @@
+Name: Jai Gollapudi
+Assignment: DS4300 HW3 (Questions, Queries, and Output for MongoDB Tutorial)
+
+
+NOTE: In this ‘ds4300_hw3.txt file’, I’ve included specific inputs in the queries. This is just to show the functionality of the query. In the actual API, the user can input any of the acceptable inputs as listed in the ‘ds4300_hw3.ipnyb’ file. Additionally I’ve limited the query results here for ease of testing but the actual API queries for the full results.
+
+
+1. What are the top cuisines in a specific borough?
+
+
+Query: db.restaurants.find({"borough": "Manhattan"}).limit(10)
+
+
+Expected Output: A list of the first 10 documents in the "Manhattan" borough, including their names, addresses, cuisines, and grades.
+
+
+2. What are the restaurants offering a specific cuisine?
+
+
+Query: db.restaurants.find({"cuisine": "Italian"}).limit(10)
+
+
+Expected Output: A list of the first 10 restaurant documents offering "Italian" cuisine, including their names, addresses, boroughs, and grades.
+
+
+3. Which restaurants have a score lower than a specified value?
+
+
+Query: 
+db.restaurants.aggregate([
+    {
+        "$project": {
+            "name": 1,
+            "borough": 1,
+            "cuisine": 1,
+            "address": 1,
+            "filtered_grades": {
+                "$filter": {
+                    "input": "$grades",
+                    "as": "grade",
+                    "cond": {"$lt": ["$$grade.score", 10]}
+                }
+            }
+        }
+    },
+    {"$match": {"filtered_grades.0": {"$exists": true}}},
+    {"$limit": 10}
+])
+
+
+Expected Output: A list of the first 10 restaurant documents with a grade score lower than 10, showing their names, addresses, cuisines, and detailed grades.
+
+
+4. What are the restaurants available in a specific zipcode?
+
+
+Query: db.restaurants.find({"address.zipcode": "10024"}).limit(10)
+
+
+Expected Output: A list of the first 10 restaurant documents in the zipcode "10024," including their names, addresses, cuisines, and grades.
+
+
+5. Which restaurants have the lowest average scores?
+
+
+Query: 
+db.restaurants.aggregate([
+            {"$unwind": "$grades"},
+            {"$group": {"_id": "$name", "averageScore": {"$avg": "$grades.score"}}},
+            {"$match": {"averageScore": {"$gt": 0}}},  
+            {"$sort": {"averageScore": 1}},
+                  {"$limit": 10}
+        ])
+
+
+Expected Output: A list of the top 10 restaurants documents sorted by the lowest average score, showing the restaurant's name and the calculated average score.
+
+
+6. How many restaurants of each cuisines are offered per borough?
+
+
+Query: 
+db.restaurants.aggregate([
+                  {"$group": {"_id": {"borough": "$borough", "cuisine": "$cuisine"}, "count": {"$sum": 1}}},
+                  {"$sort": {"count": -1}},
+                  {"$limit": 10}
+])
+Expected Output: A list of the top 10 restaurants documents showing the count of different cuisines offered per borough.
+
+
+7. Which restaurants are near a specific geographical location?
+
+
+Query: 
+db.restaurants.find({
+  "address.coord": {
+    "$near": {
+      "$geometry": {
+        "type": "Point",
+        "coordinates": [-73.856077, 40.848447]
+      },
+      "$maxDistance": 500
+    }
+  }
+}).limit(10)
+
+
+Expected Output: A list of the top 10 most closest restaurants located within 500 meters of the specified coordinates, including their names, addresses, and distances from the point.
+
+
+8. Which restaurants have received a particular grade?
+
+
+Query: db.restaurants.find({"grades.grade": "C"}).limit(10)
+
+
+Expected Output: A list of the top 10 restaurants which received a “C” grade
+
+
+9. Which restaurants have received a grade during a specified period?
+
+
+Query: 
+db.restaurants.find({
+    "grades.date": {
+        "$gte": new Date('2012-06-24'),
+        "$lte": new Date('2013-05-21')
+    }
+}).limit(10)
+
+
+Expected Output: A list of the first 10 restaurants documents that have received a grade between the 2012-06-24(start date) and 2013-05-21(end date).
+
+
+10. List the restaurants sorted by name alphabetically.
+
+
+Query: db.restaurants.find().sort("name", 1).limit(10)
+
+
+Expected Output: A list of the first 10 restaurants documents sorted alphabetically by name, including their names, addresses, cuisines, and grades.
